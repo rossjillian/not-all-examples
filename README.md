@@ -1,2 +1,2 @@
-# not-all-examples
-Not all examples are created equal
+# Not all examples are created equal
+
