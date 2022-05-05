@@ -15,11 +15,11 @@ from tqdm import tqdm
 
 def main():
 	args = cfg.parse_args()
-	if args.bias != 0:
+	if args.aug != 0:
 		file_prefix = 'cluster_%s_%s' % (args.clustering, args.dataset)
 		if args.preprocess:
 			file_prefix = file_prefix + '_preprocess'
-		create_biased_dataset(file_prefix, args, bias_interval=args.bias, num_biased=args.num_biased, biased_category=args.biased_category)
+		create_biased_dataset(file_prefix, args, bias_interval=args.aug, num_biased=args.num_aug, biased_category=args.aug_category)
 	if args.generate_color_list:
 		create_unbiased_dataset(args)
 
@@ -56,46 +56,11 @@ def create_biased_dataset(file_prefix, args, bias_interval=0.1, num_biased=1, bi
 	print(bw_assignments)
 	bw_imgs = []
 	
-	color_assignments = np.setdiff1d(categories, bw_assignments)		
-	for i in color_assignments:
-		# Assign constant 5% bias to color categories
-		num_bw = int(len(img_assignment_map[i]) * 0.05)
-		bw_category_imgs = random.sample(img_assignment_map[i], num_bw)
-		bw_imgs = bw_imgs + bw_category_imgs
-	
-	#TODO: temporary change
-	bias = 0.2 
-	prev_bias = 0.2
-	args.bias = bias
-	metadata = core.get_dataset_metadata(args.split, args)
-	print("Bias: %f" % bias)
-	for i in bw_assignments:
-		# Assign specified bias to B&W categories
-		num_bw = int(len(img_assignment_map[i]) * bias)
-		print("Num B&W: %d" % num_bw)
-		remaining_bw = [entry for entry in img_assignment_map[i] if entry not in bw_imgs]
-		bw_category_imgs = random.sample(remaining_bw, num_bw)
-		bw_imgs = bw_imgs + bw_category_imgs	
-		print("Num selected: %d" % len(bw_imgs))
-	
-	if not os.path.exists(metadata['bw_dir']):
-		os.makedirs(metadata['bw_dir'])
-	file_name = os.path.join(metadata['bw_dir'], metadata['bw_metadata'])
-	with open(file_name, 'w') as f:
-		json.dump(bw_imgs, f)
-	with open(file_name.replace('.json', '.txt'), 'w') as f:
-	    f.write(str(np.unique(assignments, return_counts=True)))
-	    f.write('\n')
-	    f.write(str(bw_assignments))
-	    f.write('\n')
-	    f.write(str(num_bw))
-	
-	return
-	
+	prev_bias = 0.0		
 	for bias_split in range(1, 11):
 		bias = bias_split * bias_interval 
 		print("Bias: %f" % bias)
-		args.bias = round(bias, 2)
+		args.aug = round(bias, 2)
 		metadata = core.get_dataset_metadata(args.split, args)
 		for i in bw_assignments:
 			# Assign specified bias to B&W categories
@@ -106,18 +71,18 @@ def create_biased_dataset(file_prefix, args, bias_interval=0.1, num_biased=1, bi
 			bw_imgs = bw_imgs + bw_category_imgs	
 			print("Num selected: %d" % len(bw_category_imgs))
 	
-		prev_bias = bias
-		if not os.path.exists(metadata['bw_dir']):
-			os.makedirs(metadata['bw_dir'])
-		file_name = os.path.join(metadata['bw_dir'], metadata['bw_metadata'])
-		with open(file_name, 'w') as f:
-			json.dump(bw_imgs, f)
-		with open(file_name.replace('.json', '.txt'), 'w') as f:
-		    f.write(str(np.unique(assignments, return_counts=True)))
-		    f.write('\n')
-		    f.write(str(bw_assignments))
-		    f.write('\n')
-		    f.write(str(num_bw))
+			prev_bias = bias
+			if not os.path.exists(metadata['bw_dir']):
+				os.makedirs(metadata['bw_dir'])
+			file_name = os.path.join(metadata['bw_dir'], metadata['bw_metadata'])
+			with open(file_name, 'w') as f:
+				json.dump(bw_imgs, f)
+			with open(file_name.replace('.json', '.txt'), 'w') as f:
+				f.write(str(np.unique(assignments, return_counts=True)))
+				f.write('\n')
+				f.write(str(bw_assignments))
+				f.write('\n')
+				f.write(str(num_bw))
 
 	return 
 

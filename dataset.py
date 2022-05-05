@@ -1,4 +1,4 @@
-from utils import rotate_img, get_patch_pair
+from utils import rotate_img
 from torch.utils.data import Dataset
 from multiprocessing import Pool
 import json
@@ -20,14 +20,6 @@ class COCODataset(Dataset):
 		self.img_dir = img_dir
 		with open(caption_file, 'r') as f:
 			self.caption_file = json.load(f)
-		"""
-		if args.only_load:
-			only_load_set = []
-			for img_idx in range(len(self.caption_file)):
-				if self.caption_file[img_idx]['file_name'] in args.only_load:
-					only_load_set.append({'file_name' : self.caption_file[img_idx]['file_name']})
-			self.caption_file = only_load_set
-		"""
 		self.args = args
 		self.transform = transform
 		self.log = logging_file
@@ -51,10 +43,7 @@ class COCODataset(Dataset):
 					f.write(img_file + ',')					
 				img_idx = random.randint(0, len(self.caption_file))		
 		
-		# TODO: clean up
-		if self.args.model_name == 'patchnet':
-			return get_patch_pair(img, self.patch_dim, self.gap, transform=self.transform)
-		elif self.args.model_name == 'rotnet':
+		if self.args.model_name == 'rotnet':
 			img = self.args.pre_transform(img)
 			if self.args.features_only:
 				return self.transform(img), img_file
@@ -69,14 +58,14 @@ class COCODataset(Dataset):
 				return torch.stack(rotated_imgs, dim=0), rotation_labels
 
 
-class BiasedCOCODataset(COCODataset):
-	def __init__(self, img_dir, caption_file, bias_assignments, args, transform=None, logging_file='./coco_data_log.txt'):
+class AugCOCODataset(COCODataset):
+	def __init__(self, img_dir, caption_file, bias_assignments, args, transform=None, augment=None, logging_file='./coco_data_log.txt'):
 		with open(bias_assignments, 'r') as f:
 			self.bias_assignments = json.load(f)
-		super(BiasedCOCODataset, self).__init__(img_dir, caption_file, args, transform=transform, logging_file=logging_file)
+		self.augment = augment
+		super(AugCOCODataset, self).__init__(img_dir, caption_file, args, transform=transform, logging_file=logging_file)
 	
 	def __getitem__(self, idx):
-		# TODO: gather captions
 		loaded = 0
 		img_idx = idx
 		while not loaded:
@@ -84,7 +73,7 @@ class BiasedCOCODataset(COCODataset):
 			try:
 				img_path = os.path.join(self.img_dir, img_file)
 				if img_file in self.bias_assignments:
-					img = Image.open(img_path).convert('L').convert('RGB')
+					img = self.augment(Image.open(img_path).convert('RGB'))
 				else:
 					img = Image.open(img_path).convert('RGB')
 				loaded = 1	
@@ -95,10 +84,7 @@ class BiasedCOCODataset(COCODataset):
 					f.write(self.caption_file[img_idx]['filename'] + ',')					
 				img_idx = random.randint(0, len(self.caption_file))		
 		
-		# TODO: clean up
-		if self.args.model_name == 'patchnet':
-			return get_patch_pair(img, self.patch_dim, self.gap, transform=self.transform)
-		elif self.args.model_name == 'rotnet':
+		if self.args.model_name == 'rotnet':
 			img = self.args.pre_transform(img)
 			if self.args.features_only:
 				return self.transform(img), img_file

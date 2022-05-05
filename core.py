@@ -1,4 +1,4 @@
-from dataset import COCODataset, BiasedCOCODataset
+from dataset import COCODataset, AugCOCODataset
 from model import RotAlexNet, DownstreamRotAlexNet
 import numpy as np
 import torchvision
@@ -17,33 +17,23 @@ def get_dataset(data_root, split, model_name, args):
 	args = update_args(split, args)
 	metadata = get_dataset_metadata(split, args)
 	transform = get_transforms(args)
+	augment = get_augmentation(args)
 
 	if args.dataset == 'coco':
-		if args.bias != 0:
-			return BiasedCOCODataset(
+		if args.aug != 0:
+			return AugCOCODataset(
 				metadata['img_dir'],
 				metadata['color_metadata'], 
 				os.path.join(metadata['bw_dir'], metadata['bw_metadata']),
 				args,
-				transform=transform
+				transform=transform,
+				augment=augment
 			)
 		else:
 			return COCODataset(
 				metadata['img_dir'],
 				metadata['color_metadata'],
 				args,
-				transform=transform
-			)
-	elif args.dataset == 'cifar10':	
-		if args.split == 'train':
-			return torchvision.datasets.CIFAR10(
-				metadata['img_dir'],
-				transform=transform
-			)
-		else:
-			return torchvision.datasets.CIFAR10(
-				metadata['img_dir'], 
-				train=False,
 				transform=transform
 			)
 	elif args.dataset == 'cifar100':	
@@ -58,48 +48,6 @@ def get_dataset(data_root, split, model_name, args):
 				train=False,
 				transform=transform
 			)
-	elif args.dataset == 'caltech101':	
-		if args.split == 'train':
-			return torchvision.datasets.Caltech101(
-				metadata['img_dir'],
-				transform=transform
-			)
-		else:
-			return torchvision.datasets.Caltech101(
-				metadata['img_dir'], 
-				train=False,
-				transform=transform
-			)
-	elif args.dataset == 'imagenet':	
-		if args.split == 'train':
-			return torchvision.datasets.ImageNet(
-				metadata['img_dir'],
-				transform=transform
-			)
-		else:
-			return torchvision.datasets.ImageNet(
-				metadata['img_dir'], 
-				train=False,
-				transform=transform
-			)
-	elif args.dataset == 'places365':	
-		if args.split == 'train':
-			return torchvision.datasets.Places365(
-				metadata['img_dir'],
-				transform=transform
-			)
-		else:
-			return torchvision.datasets.Places365(
-				metadata['img_dir'], 
-				train=False,
-				transform=transform
-			)
-	elif args.dataset == 'objectnet':
-		return ObjectNetDataset(
-			metadata['img_dir'],
-			args,
-			transform=transform
-		)
 
 
 def get_dataset_metadata(split, args):
@@ -112,50 +60,24 @@ def get_dataset_metadata(split, args):
 			metadata['color_metadata'] = 'coco_train_metadata_color.json'
 			metadata['img_dir'] = os.path.join(args.data_root, 'train2014')
 			metadata['bw_dir'] = './bias/coco/train'
-			if args.bias != 0:
-				metadata['bw_metadata'] = 'metadata_%s_%d_%s_%d_%s_bw-%d.json' % (args.clustering, args.k, str(args.bias).replace('.', ''), args.num_biased, args.biased_category, args.repeat)
+			if args.aug != 0:
+				metadata['bw_metadata'] = 'metadata_%s_%d_%s_%d_%s_bw-%d.json' % (args.clustering, args.k, str(args.aug).replace('.', ''), args.num_aug, args.aug_category, args.repeat)
 		elif split == 'val':
 			metadata['original_metadata'] = os.path.join(args.data_root, 'annotations', 'captions_val2014.json')
 			metadata['color_metadata'] = 'coco_val_metadata_color.json'
 			metadata['img_dir'] = os.path.join(args.data_root, 'val2014')
 			metadata['bw_dir'] = './bias/coco/val'
-			if args.bias != 0:
-				metadata['bw_metadata'] = 'metadata_%s_%d_%s_%d_%s_bw-%d.json' % (args.clustering, args.k, str(args.bias).replace('.', ''), args.num_biased, args.biased_category, args.repeat)
-				# metadata['bw_metadata'] = 'metadata_%s_%d_%s_%d_bw.json' % (args.clustering, args.k, str(args.bias).replace('.', ''), args.num_biased)
+			if args.aug != 0:
+				metadata['bw_metadata'] = 'metadata_%s_%d_%s_%d_%s_bw-%d.json' % (args.clustering, args.k, str(args.aug).replace('.', ''), args.num_aug, args.aug_category, args.repeat)
 		elif split == 'test':
 			metadata['original_metadata'] = None
 			metadata['color_metadata'] = 'coco_test_metadata_color.json'
 			metadata['img_dir'] = os.path.join(args.data_root, 'test2014')
 			metadata['bw_dir'] = './bias/coco/test'
-
-	# CIFAR10	
-	elif args.dataset == 'cifar10':
-		metadata['img_dir'] = os.path.join(args.data_root)
-		metadata['base_model'] = RotAlexNet()
 	# CIFAR100
 	elif args.dataset == 'cifar100':
 		metadata['img_dir'] = os.path.join(args.data_root)
 		metadata['base_model'] = RotAlexNet()
-	# Caltech101
-	elif args.dataset == 'caltech101':
-		metadata['img_dir'] = os.path.join(args.data_root)
-		metadata['base_model'] = RotAlexNet()
-	# ImageNet
-	elif args.dataset == 'imagenet':
-		metadata['img_dir'] = os.path.join(args.data_root)
-		metadata['base_model'] = RotAlexNet()
-	# Places365
-	elif args.dataset == 'places365':
-		metadata['img_dir'] = os.path.join(args.data_root)
-		metadata['base_model'] = RotAlexNet()
-	# ObjectNet
-	elif args.dataset == 'objectnet':
-		if split == 'train':
-			metadata['color_metadata'] = 'obj_train_metadata_color.json'
-			metadata['img_dir'] = os.path.join(args.data_root, 'train')
-		elif split == 'val':
-			metadata['color_metadata'] = 'obj_val_metadata_color.json'
-			metadata['img_dir'] = os.path.join(args.data_root, 'val')
 	return metadata
 
 
@@ -185,14 +107,14 @@ def get_transforms(args):
 	mean = [0.485, 0.456, 0.406]
 	std = [0.229, 0.224, 0.225]
 	
-	if args.dataset == 'cc' or args.dataset == 'coco' or args.dataset == 'objectnet':
+	if args.dataset == 'coco':
 		transform = transforms.Compose(
 			[
 				transforms.ToTensor(),
 				transforms.Normalize(mean=mean, std=std)
 			]
 		)
-	elif args.dataset == 'cifar10' or args.dataset == 'cifar100' or args.dataset == 'caltech101' or args.dataset == 'imagenet' or args.dataset == 'places365':	
+	elif args.dataset == 'cifar10' or args.dataset == 'cifar100':	
 		transform = transforms.Compose(
 			[
 				transforms.Resize(256),
@@ -203,6 +125,28 @@ def get_transforms(args):
 		)
 
 	return transform
+
+
+def get_augmentation(args):
+	if args.aug_transform == 'bw':
+		augment = transforms.Compose(
+			[
+				transforms.Grayscale(num_output_channels=3)
+			]	
+		)
+	elif args.aug_transform == 'blur':
+		augment = transforms.Compose(
+			[
+				transforms.GaussianBlur(kernel_size=(5,5))
+			]	
+		)
+	elif args.aug_transform == 'jitter':
+		augment = transforms.Compose(
+			[
+				transforms.ColorJitter()
+			]	
+		)
+	return augment
 
 
 def get_dataloader(dataset, batch_size, num_workers, args, ngpus=None, gpu=None, drop_last=True):
@@ -275,7 +219,5 @@ def get_loss(args):
 
 def get_optimizer(parameters, lr, args):
 	return optim.Adam(parameters, lr=lr)
-
-
 
 

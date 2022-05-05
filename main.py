@@ -34,7 +34,7 @@ def main():
 
 def main_worker(gpu, ngpus, args):
 	args.gpu = gpu
-	weights_path = os.path.join(args.weights_dir, args.model_name, args.dataset, str(args.bias).replace('.', '') + '_' + str(args.num_biased), str(args.k), 'c'+str(args.biased_category))
+	weights_path = os.path.join(args.weights_dir, args.model_name, args.dataset, str(args.aug).replace('.', '') + '_' + str(args.num_aug), str(args.k), 'c'+str(args.aug_category), args.aug_transform)
 	if not os.path.exists(weights_path):
 		os.makedirs(weights_path, exist_ok=True)
 	log_path = os.path.join(args.log_dir, args.model_name)
@@ -118,7 +118,7 @@ def main_worker(gpu, ngpus, args):
 
 	best_acc = 0
 	if is_rank0(args, ngpus):
-		writer = SummaryWriter(log_dir='./runs/%s_%s_b%s_n%d_k%d_c%s-%d' % (args.model_name, args.dataset, str(args.bias).replace('.', ''), args.num_biased, args.k, args.biased_category, args.repeat))
+		writer = SummaryWriter(log_dir='./runs/%s_%s_b%s_n%d_k%d_c%s_%s-%d' % (args.model_name, args.dataset, str(args.aug).replace('.', ''), args.num_aug, args.k, args.aug_category, args.aug_transform, args.repeat))
 
 	if args.debug:
 		epoch = 0

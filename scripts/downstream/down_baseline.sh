@@ -1,0 +1,1 @@
+python3 -m main --pretrained=./weights/rotnet/coco/0_0/5_weights-0.pt --model_name=rotnetdown --dataset=cifar100 --num_classes=100 --clustering=kmeans --aug=0.0 --num_aug=0 --k=5 --aug_transform=bw --ddp

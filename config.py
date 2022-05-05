@@ -146,22 +146,27 @@ def get_parser():
 		help='Get list of all-color images'
 	)
 	parser.add_argument(
-		'--bias',
+		'--aug_transform',
+		type=str, 
+		default='bw'
+	)
+	parser.add_argument(
+		'--aug',
 		type=float, 
 		default=0,
-		help='Split of bias: 0 (no bias) to 1 (all bias)'
+		help='Split of augmentation: 0 (no aug) to 1 (all aug)'
 	)
 	parser.add_argument(
-		'--num_biased',
+		'--num_aug',
 		type=int,
 		default=0,
-		help='How many categories to bias'
+		help='How many categories to augment'
 	)
 	parser.add_argument(
-		'--biased_category',
+		'--aug_category',
 		type=str,
 		default=None,
-		help='Comma separated list of categories (clusters) to assign bias'
+		help='Comma separated list of categories (clusters) to assign aug'
 	)
 	# Clustering Args (clustering.py)
 	parser.add_argument(
@@ -201,27 +206,6 @@ def get_parser():
 		'--num_classes',
 		type=int,
 		help='Number of categories for downstream'
-	)
-	# Analysis Args (analysis.py)
-	parser.add_argument(
-		'--train_pca',
-		action='store_true',
-		help='Train and store PCA'
-	)
-	parser.add_argument(
-		'--model_bias',
-		type=float,
-		help='Bias that model was trained with'
-	)
-	parser.add_argument(
-		'--data_bias',
-		type=float,
-		help='Bias in analysis dataset'
-	)
-	parser.add_argument(
-		'--compute_rdm',
-		action='store_true',
-		help='Compute RDM'
 	)
 	parser.add_argument(
 		'--repeat',
